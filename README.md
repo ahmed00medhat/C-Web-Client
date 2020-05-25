@@ -7,4 +7,4 @@ the weather details are then prined to standard output.
 The application depends on the libcurl and libjsoncpp
 Compilation command: g++ main.cpp -lcurl -ljsoncpp  -g
 
-Usage: ./a.out <zip-code>
+Usage: ./a.out \<zip-code\>
