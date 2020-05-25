@@ -8,6 +8,7 @@
 #include <ctime>
 #include <jsoncpp/json/json.h>
 
+//defining some fixed values
 #define API_KEY "5f00619da00d5e9c4972c673e406e6fe"
 #define URL "http://api.openweathermap.org/data/2.5/weather?appid="
 #define VWIDTH 6
@@ -15,13 +16,14 @@
 
 //http://api.openweathermap.org/data/2.5/weather?appid=5f00619da00d5e9c4972c673e406e6fe&zip=80234,us&units=imperial
 
-
+//Structure to hold a response chunk of data
 struct memory {
     char *response;
     size_t size;
 };
 
 
+//string to hold the response
 static std::string resp;
 
 static size_t cb(void *data, size_t size, size_t nmemb, void *userp)
@@ -30,18 +32,6 @@ static size_t cb(void *data, size_t size, size_t nmemb, void *userp)
     std::string tmp((char *) data,nmemb);
     resp.append(tmp);
     size_t realsize = size * nmemb;
-    //struct memory *mem = (struct memory *)userp;
-    //printf("%.*s=========\n", nmemb, (char*) data);
-    // printf("%.*s=========\n", mem->size, (char*) mem->response);
-    // char *ptr = realloc(mem->response, mem->size + realsize + 1);
-    // if(ptr == NULL)
-    //     return 0;  /* out of memory! */
-
-    // mem->response = ptr;
-    // memcpy(&(mem->response[mem->size]), data, realsize);
-    // mem->size += realsize;
-    // mem->response[mem->size] = 0;
-
     return realsize;
 }
 
@@ -52,6 +42,7 @@ int main(int argc, char** argv)
   CURLcode res;
   int zipcode=0;
 
+  //Validating the input
   if(argc < 2 ){
     std::cout<<"Wrong parameters"<<std::endl;
     std::cout<<"Usage: a.out <zipcode>"<<std::endl;
@@ -72,6 +63,8 @@ int main(int argc, char** argv)
     }
   }
 
+
+  //preparing the URL
   std::string url;
   url.append(URL);
   url.append(API_KEY);
@@ -80,9 +73,9 @@ int main(int argc, char** argv)
   url.append(",us");
   url.append("&units=imperial");
   
+  
 
-  //std::cout<<url<<std::endl;
-
+  //initializing the curl library to send the GET request
   curl = curl_easy_init();
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -106,9 +99,9 @@ int main(int argc, char** argv)
  
     /* always cleanup */ 
     curl_easy_cleanup(curl);
+    
 
-    //std::cout<<resp<<std::endl;
-
+    //preparing json parser
     Json::Value root;
     Json::Value * ptr;
     Json::Reader reader;
@@ -116,10 +109,13 @@ int main(int argc, char** argv)
     reader.parse(resp, root);
     
     
+    //checking if response is OK
     if(root["cod"].asString().compare("200") != 0){
-      std::cout<< "City Not Found"<<std::endl;
+      std::cout<<root["message"].asString()<<std::endl;
       return 4;
     }
+
+    //printing out the weather details
     const std::time_t x= root["dt"].asUInt();
     std::cout<< std::asctime(std::localtime(&x))<<std::endl;
 
@@ -137,11 +133,8 @@ int main(int argc, char** argv)
     std::cout<< "Visibility " << std::setw(VWIDTH) << std::setfill(SFILL) << root["visibility"].asFloat()<<" m"<<std::endl;
 
     std::cout<< "Wind:Speed " << std::setw(VWIDTH) << std::setfill(SFILL) << root["wind"]["speed"].asFloat()<<" miles/hr";
-    std::cout<< ", Direction"<< std::setw(VWIDTH) << std::setfill(SFILL) << root["wind"]["deg"].asInt()<<" °"<<std::endl;
-    std::cout<< "Cloudy     "<< std::setw(VWIDTH) << std::setfill(SFILL) << root["clouds"]["all"].asInt()<<" %"<<std::endl;
-
-
-    
+    std::cout<< ", Direction" << std::setw(VWIDTH) << std::setfill(SFILL) << root["wind"]["deg"].asInt()<<" °"<<std::endl;
+    std::cout<< "Cloudy     " << std::setw(VWIDTH) << std::setfill(SFILL) << root["clouds"]["all"].asInt()<<" %"<<std::endl;
 
   }
   return 0;
